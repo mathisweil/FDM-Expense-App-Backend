@@ -1,6 +1,7 @@
 from django import ModelForm
 from .models import Claim
 
+
 class ClaimForm(ModelForm):
     class Meta:
         model = Claim

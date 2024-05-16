@@ -26,6 +26,10 @@ class Employee(models.Model):
     date_of_joining = models.DateField(auto_now_add=True)
     date_of_birth = models.DateField()
 
+    class Meta:
+        db_table = 'employees'
+        ordering = ['first_name', 'last_name']
+
 
 class Admin(models.Model):
     admin_id = models.AutoField(primary_key=True)
