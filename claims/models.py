@@ -32,5 +32,6 @@ class Claim(models.Model):
     approved_on = models.DateField(null=True)
     comment = models.TextField(null=True, blank=True)
 
-    def __str__(self):
-        return self.title
+    class Meta:
+        db_table = 'claims'
+        ordering = ['-date']

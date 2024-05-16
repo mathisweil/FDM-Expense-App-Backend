@@ -22,7 +22,7 @@ class Employee(models.Model):
     account_number = models.CharField(max_length=50)
     sort_code = models.CharField(max_length=50)
     permission = models.CharField(max_length=50, choices=PERMISSION, default='EMPLOYEE')
-    manager_id = models.ForeignKey('self', on_delete=models.RESTRICT)
+    manager_id = models.ForeignKey('Employee', on_delete=models.RESTRICT, null=True, blank=True)
     date_of_joining = models.DateField(auto_now_add=True)
     date_of_birth = models.DateField()
 
