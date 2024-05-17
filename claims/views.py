@@ -1,61 +1,72 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from datetime import date
 from .models import Claim
+from users.models import Employee
 from django.db.models import Q
+from django.shortcuts import get_list_or_404, get_object_or_404
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import ClaimSerializer
 
 
 # Create your views here.
 
-def get_claims(request):
-    if permission == 'EMPLOYEE':
-        if current:
-            claims = Claim.objects.filter(Q(employee_id=request.user_id) & ~Q(status='COMPLETED'))
-        else:
-            claims = Claim.objects.filter(Q(employee_id=request.user_id) & Q(status='COMPLETED'))
-    elif permission == 'MANAGER':
-        if current:
-            claims = Claim.objects.filter(Q(manager_id=request.user_id) & (Q(status='PENDING') | Q(status='REJECTEDF')))
-        else:
-            claims = Claim.objects.filter(
-                Q(manager_id=request.user_id) & (Q(status='COMPLETED') | Q(status='APPROVED') | Q(status='REJECTED')))
-    elif permission == 'FINANCE':
-        if current:
-            claims = Claim.objects.filter(Q(employee_id=request.user_id) & ~Q(status='APPROVED'))
-        else:
-            claims = Claim.objects.filter(
-                Q(employee_id=request.user_id) & (Q(status='PROCESSED') | Q(status='REJECTEDF')))
-    else:
-        claims = Claim.objects.all()
-    return render(request, 'claims/claims.html', {'claims': claims})
-
-
-def update_claim(request, claim_id):
-    claim = Claim.objects.get(claim_id=claim_id)
-    claim.status = 'APPROVED'
-    claim.save()
-    return HttpResponse('Claim approved')
-
-
-def send_claim(request):
-    if request.method == 'POST':
-        form = ClaimForm(request.POST, request.FILES)
-        if form.is_valid():
-            claim = form.save(commit=False)
-            claim.employee_id = request.user_id
-            claim.save()
-            return HttpResponse('Claim submitted')
-    else:
-        form = ClaimForm()
-    return render(request, 'claims/send_claim.html', {'form': form})
-
+@api_view(['POST'])
 def create_claim(request):
-    if request.method == 'POST':
-        form = ClaimForm(request.POST, request.FILES)
-        if form.is_valid():
-            claim = form.save(commit=False)
-            claim.employee_id = request.user_id
-            claim.save()
-            return HttpResponse('Claim submitted')
-    else:
-        form = ClaimForm()
-    return render(request, 'claims/send_claim.html', {'form': form})
+    serializer = ClaimSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def retrieve_claims(request, employee_id, permission, current):
+    current = current.lower() == 'true'
+    try:
+        if permission == 'EMPLOYEE':
+            if current:
+                claims = Claim.objects.filter(Q(employee_id=employee_id) & ~Q(status='COMPLETED'))
+            else:
+                claims = Claim.objects.filter(Q(employee_id=employee_id) & Q(status='COMPLETED'))
+        elif permission == 'MANAGER':
+            if current:
+                claims = Claim.objects.filter(Q(employee_id__manager_id=employee_id) & (Q(status='PENDING') | Q(status='REJECTEDF')))
+            else:
+                claims = Claim.objects.filter(
+                    Q(employee_id__manager_id=employee_id) & (Q(status='COMPLETED') | Q(status='APPROVED') | Q(status='REJECTED')))
+        elif permission == 'FINANCE':
+            if current:
+                claims = Claim.objects.filter(Q(employee_id__finance_id=employee_id) & Q(status='APPROVED'))
+            else:
+                claims = Claim.objects.filter(
+                    Q(employee_id__finance_id=employee_id) & (Q(status='PROCESSED') | Q(status='REJECTEDF')))
+        else:
+            claims = Claim.objects.all()
+        serializer = ClaimSerializer(claims, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Employee.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['PATCH'])
+def update_claim(request, claim_id, manager_id):
+    claim = get_object_or_404(Claim, claim_id=claim_id)
+    employee = get_object_or_404(Employee, employee_id=manager_id)
+    if request.data['status'] == 'APPROVED':
+        claim.approved_on = date.today()
+        claim.approved_by = employee.first_name + " " + employee.last_name
+    elif request.data['status'] == 'REJECTEDF':
+        claim.approved_on = None
+        claim.approved_by = None
+    serializer = ClaimSerializer(claim, data=request.data, partial=(request.method == 'PATCH'))
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+def delete_claim(request, claim_id):
+    claim = get_object_or_404(Claim, claim_id=claim_id)
+    claim.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

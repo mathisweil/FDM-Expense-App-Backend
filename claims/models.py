@@ -1,6 +1,5 @@
 from django.db import models
 
-
 # Create your models here.
 
 
@@ -26,7 +25,7 @@ class Claim(models.Model):
     type = models.CharField(max_length=50, choices=TYPE)
     date = models.DateField(auto_now_add=True)
     description = models.TextField(null=True, blank=True)
-    receipt = models.FileField(upload_to='receipts/')
+    receipt = models.FileField(upload_to='receipts/', null=True)
     status = models.CharField(max_length=50, choices=STATUS, default='PENDING')
     claimed_by = models.CharField(max_length=50)
     approved_by = models.CharField(max_length=50, null=True)

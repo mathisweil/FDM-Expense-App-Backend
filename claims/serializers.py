@@ -1,14 +1,9 @@
 from .models import Claim
-from rest_framework import serializers
+from rest_framework.serializers import ModelSerializer
+from datetime import date
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
+class ClaimSerializer(ModelSerializer):
     class Meta:
         model = Claim
-        fields = ['__all__']
-
-
-class GroupSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Group
-        fields = ['url', 'name']
+        fields = '__all__'
