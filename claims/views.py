@@ -2,7 +2,7 @@ from datetime import date
 from .models import Claim
 from users.models import Employee
 from django.db.models import Q
-from django.shortcuts import get_list_or_404, get_object_or_404
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -26,15 +26,15 @@ def retrieve_claims(request, employee_id, permission, current):
     try:
         if permission == 'EMPLOYEE':
             if current:
-                claims = Claim.objects.filter(Q(employee_id=employee_id) & ~Q(status='COMPLETED'))
+                claims = Claim.objects.filter(Q(employee_id=employee_id) & ~Q(status='PROCESSED'))
             else:
-                claims = Claim.objects.filter(Q(employee_id=employee_id) & Q(status='COMPLETED'))
+                claims = Claim.objects.filter(Q(employee_id=employee_id) & Q(status='PROCESSED'))
         elif permission == 'MANAGER':
             if current:
                 claims = Claim.objects.filter(Q(employee_id__manager_id=employee_id) & (Q(status='PENDING') | Q(status='REJECTEDF')))
             else:
                 claims = Claim.objects.filter(
-                    Q(employee_id__manager_id=employee_id) & (Q(status='COMPLETED') | Q(status='APPROVED') | Q(status='REJECTED')))
+                    Q(employee_id__manager_id=employee_id) & (Q(status='PROCESSED') | Q(status='APPROVED') | Q(status='REJECTED')))
         elif permission == 'FINANCE':
             if current:
                 claims = Claim.objects.filter(Q(employee_id__finance_id=employee_id) & Q(status='APPROVED'))
@@ -53,12 +53,14 @@ def retrieve_claims(request, employee_id, permission, current):
 def update_claim(request, claim_id, manager_id):
     claim = get_object_or_404(Claim, claim_id=claim_id)
     employee = get_object_or_404(Employee, employee_id=manager_id)
-    if request.data['status'] == 'APPROVED':
-        claim.approved_on = date.today()
-        claim.approved_by = employee.first_name + " " + employee.last_name
-    elif request.data['status'] == 'REJECTEDF':
-        claim.approved_on = None
-        claim.approved_by = None
+    if employee.permission == 'MANAGER' or employee.permission == 'FINANCE':
+        claim.comment = employee.permission + ": " + request.data['comment']
+        if request.data['status'].upper() == 'APPROVED':
+            claim.approved_on = date.today()
+            claim.approved_by = employee.first_name + " " + employee.last_name
+        elif request.data['status'].upper() == 'REJECTEDF':
+            claim.approved_on = None
+            claim.approved_by = None
     serializer = ClaimSerializer(claim, data=request.data, partial=(request.method == 'PATCH'))
     if serializer.is_valid():
         serializer.save()

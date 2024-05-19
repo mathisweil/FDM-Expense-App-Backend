@@ -21,7 +21,7 @@ def create_employee(request):
 def retrieve_employees(request, permission, employee_id):
     try:
         if permission == 'MANAGER':
-            employees = Employee.objects.filter(employee_id=employee_id)
+            employees = Employee.objects.filter(manager_id=employee_id)
         elif permission == 'FINANCE':
             employees = Employee.objects.filter(finance_id=employee_id)
         else:

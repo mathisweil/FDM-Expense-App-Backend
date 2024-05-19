@@ -5,11 +5,11 @@ from django.db import models
 
 class Claim(models.Model):
     TYPE = {
-        ('TRAVEL', 'Travel'),
-        ('MEAL', 'Meal'),
-        ('ACCOMMODATION', 'Accommodation'),
-        ('GIFT', 'Gift'),
-        ('OTHER', 'Other'),
+        ('Travel', 'Travel'),
+        ('Meal', 'Meal'),
+        ('Night stay', 'Night stay'),
+        ('Gift', 'Gift'),
+        ('Other', 'Other'),
     }
     STATUS = {
         ('PENDING', 'Pending'),
