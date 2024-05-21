@@ -14,5 +14,6 @@ class ClaimSerializer(ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.status = validated_data['status'].upper()
+        instance.comment = validated_data['comment']
         instance.save()
         return instance

@@ -27,7 +27,7 @@ class Claim(models.Model):
     description = models.TextField(null=True, blank=True)
     receipt = models.FileField(upload_to='receipts/', null=True)
     status = models.CharField(max_length=50, choices=STATUS, default='PENDING')
-    claimed_by = models.CharField(max_length=50)
+    claimed_by = models.CharField(max_length=50, null=True, blank=True)
     approved_by = models.CharField(max_length=50, null=True)
     approved_on = models.DateField(null=True)
     comment = models.TextField(null=True, blank=True)

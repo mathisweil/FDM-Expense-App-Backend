@@ -54,7 +54,6 @@ def update_claim(request, claim_id, manager_id):
     claim = get_object_or_404(Claim, claim_id=claim_id)
     employee = get_object_or_404(Employee, employee_id=manager_id)
     if employee.permission == 'MANAGER' or employee.permission == 'FINANCE':
-        claim.comment = employee.permission + ": " + request.data['comment']
         if request.data['status'].upper() == 'APPROVED':
             claim.approved_on = date.today()
             claim.approved_by = employee.first_name + " " + employee.last_name
